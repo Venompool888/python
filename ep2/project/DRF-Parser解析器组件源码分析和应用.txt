@@ -1,0 +1,27 @@
+标题: DRF-Parser解析器组件源码分析和应用
+作者: harry6
+发布时间: 
+2024-10-27 20:25
+
+阅读数量: 144
+
+1. 解析器源码分析
+注意：以下源码为了方便理解已进行简化，只保留了解析器相关的代码
+# 视图函数：
+class MyView(APIView):
+    def post(self, request):
+        print(self.request.data)  # 触发解析流程
+        return Response("ok")
+2.实践应用
+# 视图类中：
+class MyView(APIView):
+    # 指定解析器(如果未指定则用默认的parser_classes=[MultiPartParser, JSONParser, FormParser]
+    parser_classes = [JSONParser, FormParser]  # 只能解析JSON和form表单数据
+
+    # 匹配解析器的方法(默认使用该类中的方法来匹配解析器，即使不显式地写出来也能生效）
+    content_negotiation_class = DefaultContentNegotiation
+
+    def post(self, request):
+        print(self.request.data)
+        return Response("ok")
+公告

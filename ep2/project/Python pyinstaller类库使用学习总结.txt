@@ -1,0 +1,174 @@
+标题: Python pyinstaller类库使用学习总结
+作者: 授客
+发布时间: 
+2024-10-28 00:07
+
+阅读数量: 224
+
+实践环境
+python3 .9.13
+pyinstaller-6.10.0-py3-none-manylinux2014_x86_64.whl
+CentOS 7.9
+win11
+实践操作
+生成Linux版可执行文件
+安装Python
+# yum install -y gcc zlib* openssl-devel libffi-devel
+# wget https://www.python.org/ftp/python/3.6.13/Python-3.6.13.tgz
+# mkdir -p /usr/local/python
+# mv Python-3.9.13.tgz /usr/local/python
+# tar -xvzf Python-3.9.13.tgz
+# cd python-3.9.13
+# ./configure --prefix=/usr/local/python/python3.9.13 --enable-shared
+# make && make install
+说明：
+1、如果不安装libffi-devel，运行pyinstaller时会报错：ModuleNotFoundError: No module named '_ctypes'，以下
+# pyinstaller simulator.py
+Traceback (most recent call last):
+  File "/usr/bin/pyinstaller", line 8, in <module>
+    sys.exit(_console_script_run())
+  File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/__main__.py", line 231, in _console_script_run
+    run()
+  File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/__main__.py", line 172, in run
+    parser = generate_parser()
+  File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/__main__.py", line 137, in generate_parser
+    import PyInstaller.building.build_main
+  File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/building/build_main.py", line 28, in <module>
+    from PyInstaller.building.api import COLLECT, EXE, MERGE, PYZ
+  File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/building/api.py", line 33, in <module>
+    from PyInstaller.building.splash import Splash  # argument type validation in EXE
+  File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/building/splash.py", line 23, in <module>
+    from PyInstaller.depend import bindepend
+  File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/depend/bindepend.py", line 15, in <module>
+    import ctypes.util
+  File "/usr/local/python/python3.9.13/lib/python3.9/ctypes/__init__.py", line 8, in <module>
+    from _ctypes import Union, Structure, Array
+ModuleNotFoundError: No module named '_ctypes'
+2、如果编译Python时不携带--enable-shared选项，运行pyinstaller时会报类似如下错误：
+File "/usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/building/build_main.py", line 671, in assemble
+    raise PythonLibraryNotFoundError()
+PyInstaller.exceptions.PythonLibraryNotFoundError: Python library not found: libpython3.9.so.1.0, libpython3.9.so
+    This means your Python installation does not come with proper shared library files.
+    This usually happens due to missing development package, or unsuitable build parameters of the Python installation.
+
+    * On Debian/Ubuntu, you need to install Python development packages:
+      * apt-get install python3-dev
+      * apt-get install python-dev
+    * If you are building Python by yourself, rebuild with `--enable-shared` (or, `--enable-framework` on macOS).
+添加/usr/lib64/libpython3.9.so.1.0文件
+# find / -name libpython3.9.so.1.0
+/root/Python-3.9.13/libpython3.9.so.1.0
+/usr/local/python/python3.9.13/lib/libpython3.9.so.1.0
+# cp /usr/local/python/python3.9.13/lib/libpython3.9.so.1.0 /usr/lib64/libpython3.9.so.1.0
+说明：如果不执行该操作，运行pyinstaller时生成可执行文件时可能报类似如下错误：
+# pyinstaller simulator.py
+/usr/local/python/python3.9.13/bin/python3.9: error while loading shared libraries: libpython3.9.so.1.0: cannot open shared object file: No such file or directory
+安装 pyinstaller
+# pip3 install pyinstaller -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com
+创建软连接，避免直接执行 pyinstaller 命令时，提示pyinstaller: command not found
+# find / -name pyinstaller
+/usr/local/python/python3.9.13/bin/pyinstaller
+# 
+# ln -fs /usr/local/python/python3.9.13/bin/pyinstaller /usr/binpyinstaller
+# pyinstaller -v
+6.10.0
+生成可执行文件
+# pwd
+/root/au02Simulator
+# pyinstaller -y  simulator.py
+87 INFO: PyInstaller: 6.10.0, contrib hooks: 2024.8
+87 INFO: Python: 3.9.13
+89 INFO: Platform: Linux-3.10.0-1160.el7.x86_64-x86_64-with-glibc2.17
+89 INFO: Python environment: /usr/local/python/python3.9.13
+90 INFO: wrote /root/au02Simulator/simulator.spec
+93 INFO: Module search paths (PYTHONPATH):
+['/usr/local/python/python3.9.13/lib/python39.zip',
+ '/usr/local/python/python3.9.13/lib/python3.9',
+ '/usr/local/python/python3.9.13/lib/python3.9/lib-dynload',
+ '/usr/local/python/python3.9.13/lib/python3.9/site-packages',
+ '/root/au02Simulator']
+166 INFO: checking Analysis
+172 INFO: checking PYZ
+181 INFO: checking PKG
+181 INFO: Bootloader /usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/bootloader/Linux-64bit-intel/run
+181 INFO: checking EXE
+182 INFO: checking COLLECT
+182 INFO: Building COLLECT COLLECT-00.toc
+210 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+# cd dist/
+# ll
+total 0
+drwxr-xr-x. 3 root root 40 Oct 24 12:46 simulator
+# cd simulator/
+# ll
+total 1204
+drwxr-xr-x. 4 root root    4096 Oct 24 12:46 _internal
+-rwxr-xr-x. 1 root root 1227016 Oct 24 12:46 simulator
+说明：这里的simulator.py为程序入口文件，即用python运行本程序时，位于其后的.py文件
+只生成一个文件
+# pyinstaller -y --onefile simulator.py
+74 INFO: PyInstaller: 6.10.0, contrib hooks: 2024.8
+75 INFO: Python: 3.9.13
+76 INFO: Platform: Linux-3.10.0-1160.el7.x86_64-x86_64-with-glibc2.17
+76 INFO: Python environment: /usr/local/python/python3.9.13
+77 INFO: wrote /root/au02Simulator/simulator.spec
+79 INFO: Module search paths (PYTHONPATH):
+['/usr/local/python/python3.9.13/lib/python39.zip',
+ '/usr/local/python/python3.9.13/lib/python3.9',
+ '/usr/local/python/python3.9.13/lib/python3.9/lib-dynload',
+ '/usr/local/python/python3.9.13/lib/python3.9/site-packages',
+ '/root/au02Simulator']
+146 INFO: checking Analysis
+149 INFO: checking PYZ
+157 INFO: checking PKG
+158 INFO: Building because toc changed
+158 INFO: Building PKG (CArchive) simulator.pkg
+7881 INFO: Building PKG (CArchive) simulator.pkg completed successfully.
+7882 INFO: Bootloader /usr/local/python/python3.9.13/lib/python3.9/site-packages/PyInstaller/bootloader/Linux-64bit-intel/run
+7882 INFO: checking EXE
+7883 INFO: Rebuilding EXE-00.toc because simulator missing
+7883 INFO: Building EXE from EXE-00.toc
+7883 INFO: Copying bootloader EXE to /root/au02Simulator/dist/simulator
+7883 INFO: Appending PKG archive to custom ELF section in EXE
+7900 INFO: Building EXE from EXE-00.toc completed successfully.
+# cd dist/
+# ll
+total 12444
+-rwxr-xr-x. 1 root root 12741136 Oct 24 12:50 simulator
+注意，生成的文件是不带配置的，程序所需配置需要自己添加
+生成Windows版可执行文件
+安装 pyinstaller
+同Linux，安装完成后，会在${PYTHON_HOME}\Scripts目录下生成pyinstaller.exe，为方便执行，将其所在路径添加到环境变量
+生成可执行文件
+同Linux
+pyinstaller [选项] program_entry_file.py
+pyinstaller常用选项
+-y档输出目录下的存在旧生成文件时，不提示删除确认提示，直接删除
+-F,--onefile打包为一个独立文件
+--add-data <source>;<dest_dir> (适用Win)、--add-data <source>:<dest_dir> (适用Linux)用于将非python文件如配置，打包进程序。
+--add-data可重复使用，以支持单次添加多个文件的需求
+例子：
+假设我们有一个Python项目，其中包含一个名为config.ini的配置文件。希望在使用PyInstaller打包项目时，将这个配置文件也一起打包进去。
+cd /d D:\PyProjects\ZenTaoTestcaseHelper
+pyinstaller --add-data "D:\PyProjects\ZenTaoTestcaseHelper\config.json;." testcase_helper.py
+生成目标结果文件路径如下：
+D:\PyProjects\ZenTaoTestcaseHelper\dist\testcase_helper\testcase_helper.exe
+D:\PyProjects\ZenTaoTestcaseHelper\dist\testcase_helper\config.json
+运行可执行文件无法正确读取配置文件解决方案
+实践时遇到过这样的情况：
+直接使用python program_entry_file.py的方式运行程序时，可正确执行不报错，直接运行打包生成的可执行文件时，出现报错，提示相关配置文件不存在。
+经过分析发现，直接运行可执行文件时，读取配置文件的路径不对，为了避免这种情况，可在代码中添加判断，设置采用可执行文件的方式运行时的配置文件读取路径:
+program_entry_file.py(程序入口文件)中判断是否是运行打包生成的可执行文件，如果是，则设置环境变量，获取可执行文件所在目录
+sys_executable = sys.executable
+if not sys_executable.endswith('python.exe') and not re.findall('python\d*$', sys_executable):
+    os.environ['EXECUTABLE_DIR'] = os.path.dirname(sys.executable)
+其它需要读取配置文件的py文件中添加判断
+假设我们期望可执行文件从位于同级目录的conf目录下的program.conf文件中读取配置
+config_file_path = 'conf/program.conf'
+if os.getenv('EXECUTABLE_DIR'):
+    config_file_path = os.path.join(os.environ['EXECUTABLE_DIR'], config_file_path)
+参考链接
+https://pyinstaller.org/en/v6.2.0/usage.html
+作者：授客微信/QQ：1033553122全国软件测试QQ交流群：7156436Git地址：https://gitee.com/ishouke友情提示：限于时间仓促，文中可能存在错误，欢迎指正、评论！作者五行缺钱，如果觉得文章对您有帮助，请扫描下边的二维码打赏作者，金额随意，您的支持将是我继续创作的源动力，打赏后如有任何疑问，请联系我!!!微信打赏                       
+		支付宝打赏                  全国软件测试交流QQ群
+公告

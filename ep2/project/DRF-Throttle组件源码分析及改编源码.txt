@@ -1,0 +1,80 @@
+标题: DRF-Throttle组件源码分析及改编源码
+作者: harry6
+发布时间: 
+2024-10-27 18:44
+
+阅读数量: 16
+
+1. 限流组件源码分析
+注意：以下源码为方便理解已进行简化，只保留了与限流组件相关的代码。注释前的数字代表执行顺序。
+SimpleRateThrottle类的源码解析：
+2. 实践：编写一个限流类
+from rest_framework.throttling import SimpleRateThrottle
+from django.core.cache import cache as default_cache
+
+class IpThrottle(SimpleRateThrottle):
+    scope = "ip"  # 节流类的名称
+    # THROTTLE_RATES = {"x1": "5/m"}   类中未定义THROTTLE_RATES则去settings中获取
+    cache = default_cache  # 节流类指定写入的缓存
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)  # 获取请求用户IP（去request中找请求头）
+        return self.cache_format % {'scope': self.scope, 'ident': ident}
+
+class UserThrottle(SimpleRateThrottle):
+    scope = "user"  # 节流类的名称
+    # THROTTLE_RATES = {"x1": "5/m"}   类中未定义THROTTLE_RATES则去settings中获取
+    cache = default_cache  # 节流类指定写入的缓存
+
+    def get_cache_key(self, request, view):
+        ident = request.user.pk  # 用户ID
+        return self.cache_format % {'scope': self.scope, 'ident': ident}
+3. 源码改编
+def parse_rate(self, rate):
+	'''重写获取时长的parse_rate方法，原本只能写1/m或2/m，现在支持：1/5m, 3/10m的格式'''
+	if rate is None:
+		return (None, None)
+	num, period = rate.split('/')  # "1/5m"
+	num_requests = int(num)
+	duration = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}[period[-1]]
+	count = int(period[0:-1])
+	return (num_requests, duration * count)
+# 思路：在视图的操作成功后再进行计入操作（throttle_success）
+# 限流类中： 重写throttle_success操作，并把计次的操作提取出来，自定义一个函数，在视图操作成功后才调用该函数进行计次
+class MyThrottle(SimpleRateThrottle):
+	
+	def throttle_success(self):
+		# self.history.insert(0, self.now)
+		# self.cache.set(self.key, self.history, self.duration)
+		return True
+
+	def done(self):
+		""" 视图函数执行成功后，再调用throttle_success里的方法"""
+		self.history.insert(0, self.now)
+		self.cache.set(self.key, self.history, self.duration)
+
+
+# 视图类中：
+class MyView(APIView):
+	def post(request):
+	"""中间代码省略"""
+	# 成功操作后才记录一次限流   
+	for throttle in self.get_throttles():
+		throttle.done()
+# 在限流类中：
+# 自定义抛出报错的异常类
+class ThrottledException(exceptions.APIException):
+	status_code = status.HTTP_429_TOO_MANY_REQUESTS
+	default_code = 'throttled'
+
+
+#重写throttle_failure方法，自定义报错信息并直接抛出异常；
+def throttle_failure(self):
+	wait = self.wait()
+	detail = {
+		"code": return_code.TOO_MANY_REQUESTS,
+		"data": "访问频率限制",
+		'detail': "需等待{}秒后才能访问".format(int(wait))
+	}
+	raise ThrottledException(detail)
+公告

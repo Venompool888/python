@@ -1,0 +1,79 @@
+标题: 在 Kubernetes 中运行 Locust 与 Selenium：安装 Chrome 和 ChromeDriver
+作者: chester·chen
+发布时间: 
+2024-10-27 10:08
+
+阅读数量: 84
+
+在现代软件开发中，性能和用户体验是至关重要的，而负载测试和自动化测试可以帮助我们实现这一目标。在本文中，我们将讨论如何在 Kubernetes 环境中运行 Locust 和 Selenium，并详细介绍如何安装 Chrome 和 ChromeDriver。
+首先，我们需要创建一个 Dockerfile，以构建一个包含 Locust 和 Selenium 的 Docker 镜像。以下是 Dockerfile 的内容：
+FROMlocustio/locust:2.31.3# 设置 Chrome 的版本ENVCHROME_VERSION 130.0.6723.69USERrootRUNapt-get update -qq -y && \
+    apt-get install -y wget unzip && \
+    apt-get install -y \
+        libasound2 \
+        libatk-bridge2.0-0\
+        libgtk-4-1\
+        libnss3 \
+        xdg-utils && \
+    wget -q -O chrome-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/linux64/chrome-linux64.zip && \unzip chrome-linux64.zip && \
+    rm chrome-linux64.zip && \
+    mv chrome-linux64 /opt/chrome/ && \
+    ln -s /opt/chrome/chrome /usr/local/bin/ && \
+    wget -q -O chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/linux64/chromedriver-linux64.zip && \unzip -j chromedriver-linux64.zip chromedriver-linux64/chromedriver && \
+    rm chromedriver-linux64.zip && \
+    mv chromedriver /usr/local/bin/
+
+# 设置 Chrome 的配置和缓存目录ENVXDG_CONFIG_HOME=/tmp/.chromiumENVXDG_CACHE_HOME=/tmp/.chromiumCOPY. .RUNpip install -r requirements.txt
+解释
+requirements.txt 示例
+locust=2.31.3selenium==4.21.0
+在使用 Selenium 时，我们需要为 Chrome 配置一些选项，以确保它能够在无头模式下正常工作。以下是获取 Chrome 选项的代码示例：
+importplatformfromseleniumimportwebdriverdefis_running_in_linux():returnplatform.system() =='Linux'defget_chrome_options():
+    is_in_linux=is_running_in_linux()
+    options_custom=webdriver.ChromeOptions()#Linux 下的 Chrome 选项ifis_in_linux:
+        options_custom.add_argument("--headless")#无头模式options_custom.add_argument('--disable-gpu')#禁用 GPU 加速options_custom.add_argument("--no-sandbox")#禁用沙箱模式else:
+        options_custom.add_argument("--start-maximized")#启动时最大化窗口#其他通用选项options_custom.add_argument("--disable-dev-shm-usage")#解决资源限制问题options_custom.add_argument("--ignore-ssl-errors=yes")#忽略 SSL 错误options_custom.add_argument("--disable-cache")#禁用缓存returnoptions_custom
+解释
+下面是一个简单的 Locust 用户示例，使用 Selenium 控制 Chrome 访问特定页面：
+fromlocustimportUser, taskclassGetUrl(User):    
+    customdriver=Nonedefon_start(self):               
+        self.customdriver= webdriver.Chrome(options=get_chrome_options())
+
+    @taskdefload_page(self):
+        self.customdriver.get("http://example.com")#根据需要替换为实际 URL
+解释
+完成 Dockerfile 和代码后，可以将其构建为 Docker 镜像，并在 Kubernetes 中部署。以下是一个基本的 Kubernetes YAML 配置示例：
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust
+spec:
+  replicas:1selector:
+    matchLabels:
+      app: locust
+  template:
+    metadata:
+      labels:
+        app: locust
+    spec:
+      containers:
+        - name: locust
+          image: your-docker-image:latest
+          ports:
+            - containerPort:8089env:
+            - name: XDG_CONFIG_HOME
+              value: /tmp/.chromium  # 设置 Chrome 的配置目录
+            - name: XDG_CACHE_HOME
+              value: /tmp/.chromium  # 设置 Chrome 的缓存目录
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust-service
+spec:
+  type: NodePort
+  ports:
+    - port:8089targetPort:8089selector:
+    app: locust
+解释
+通过以上步骤，我们成功在 Kubernetes 中运行了 Locust 和 Selenium，并安装了 Chrome 和 ChromeDriver。确保配置正确的环境变量和 Chrome 选项，可以大大提高在 Kubernetes 环境中的稳定性。如果您有更多需求，可以根据项目的具体情况进行扩展和调整。

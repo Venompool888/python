@@ -1,0 +1,64 @@
+标题: 在Ubuntu小设备上使用VSCode+SSH开发部署nicegui的Web应用，并设置系统开机自动启动应用
+作者: 伍华聪
+发布时间: 
+2024-10-22 12:12
+
+阅读数量: 366
+
+在Ubuntu小设备上使用VSCode+SSH开发部署nicegui的Web应用，并设置系统开机自动启动应用
+在一些小的设备上跑Ubuntu系统，需要快速的开发和调整项目的时候，往往使用SSH进行远程的开发测试，这样可以避免传统的打包更新处理，能够快速的在实际环境上测试具体的内容。另外由于系统设备往往需要重启后能够保留应用的工作，因此也需要在Ubuntu系统设置自动启动的服务处理。本篇随笔介绍在Ubuntu小设备上使用VSCode+SSH开发部署nicegui的Web应用，并设置系统开机自动启动应用。
+1、使用VSCode+SSH开发部署nicegui的Web应用
+VSCode的功能非常强大，使用扩展来实现更丰富的功能是它的重要特色之一，要使用远程开发，我们需要安装Remote-SSH扩展来实现直接打开服务器端的文件进行开发、编译等。
+首先我们在扩展页面中找到微软的 Remote-SSH 扩展插件，给VSCode安装上。
+如果你需要使用FTP的一些处理，也可以安装一个SFTP来配合VSCode实现文件的上传下载，不过即使不安装SFTP也没关系。
+在VSCode命令面板中打开配置
+在配置参数界面中指定Remote-SSH的配置文件，如下所示。
+由于我是在Windows上开发，因此配置如下所示。如果是MacOS或其他系统，有所不同。
+安装完毕的Remote-SSH，会在左侧的导航中有一个SSH的项目，我们添加自己的服务器的IP和用户名信息，用来连接服务器。
+一般格式如下所示，替换为自己的IP和登录系统用户：
+Host192.168.1.103HostName192.168.1.103User root
+发起连接到服务器的操作后，会提示输入用户密码：
+成功后我们打开服务器的代码目录，如下所示。
+然后开发就和本地文件一样了，我们在上面编写代码、编译运行都是基于服务器的环境的，如果缺少模块引用，记得使用pip install进行安装依赖即可，安装也是给服务器环境进行的安装。
+对服务器的SSH控制命令处理，我们可以通过VScode中的bash面板打开。
+创建命令窗口后如下所示。
+我们就可以基于这个进行相关的命令操作了，就和本地命令处理类似了。
+VScode上对服务器文件的操作很方便，可以直接拖动本地文件到服务器目录上，也可以从服务器目录上下载代码文件到本地。
+2、设置Ubuntu系统开机自动启动应用
+有时候，我们在实际环境上部署项目后，都是希望每次重启，相关的应用能自动启动，避免每次手工干预的繁琐。
+首先我们在我们的项目代码上，创建一个脚本，用于启动服务引用的，如创建文件：start_my_backend.sh
+然后填写内容，这个和我们实际运行python项目的命令差不多一样。
+#!/bin/bash
+# 启动Python后端程序/usr/bin/python /root/test/src/nicegui/modularization/main.py
+确保路径是正确的，并且指向你的 Python 解释器和 Python 脚本文件。
+注意文件开头 #!/bin/bash 是标识为Bash命令的特征，如下文件在目录中所示。
+给予脚本执行权限：
+chmod+x /root/test/src/start_my_backend.sh
+然后再 /etc/systemd/system/ 目录上创建一个服务启动的处理，命名为：my_backend.service
+添加下面的内容：
+[Unit]
+Description=My Python Backend Service
+After=network.target
+
+[Service]
+ExecStart=/root/test/src/start_my_backend.shRestart=always
+User=root
+WorkingDirectory=/root/test/src
+Environment="PATH=/usr/bin"[Install]
+WantedBy=multi-user.target
+解释：
+保存并退出编辑器（按Ctrl+O然后Ctrl+X）。
+sudosystemctl daemon-reload
+sudosystemctl enable my_backend.service
+sudosystemctl start my_backend.service
+sudosystemctl status my_backend.service
+如果你想查看服务的运行日志，可以使用以下命令：
+journalctl -u my_backend.service
+这样，每次系统启动时，my_backend服务就会自动启动并运行你的 Python 后端程序了。
+最后查看服务器端的启动项目端口是否正常。
+这样，从服务器上直接编写代码开发或者调试，并直接自动启动服务器，就实现了我们常规的开发处理了。
+posted on2024-10-22 12:12伍华聪阅读(366) 
+评论(0)编辑收藏举报
+导航
+公告
+Powered by:博客园Copyright © 2024 伍华聪Powered by .NET 8.0 on Kubernetes

@@ -1,0 +1,95 @@
+标题: manim边做边学--直角平面
+作者: wang_yb
+发布时间: 
+2024-10-20 09:15
+
+阅读数量: 157
+
+直角平面NumberPlane是Manim库中用于创建二维坐标平面的对象，它可以帮助用户在场景中可视化坐标轴以及网格线。
+通过坐标轴、网格线以及刻度，它能够动态地展示函数曲线、几何图形以及它们的变换过程，使得复杂的数学概念变得直观易懂。
+NumberPlane提供了x轴和y轴，通常是中心对称的，
+默认情况下，NumberPlane会显示背景网格，这对于展示数学函数、几何形状等非常有帮助。
+我们可以定义坐标平面的范围，为坐标轴添加标签，并将其他形状、函数或动画放置在NumberPlane上，从而在动画中展示数学概念。
+下面将介绍Manim中的NumberPlane对象以及一些常用的使用示例。
+NumberPlane的主要参数有：
+直角平面中，常见的是坐标轴和背景网格线，其样式通过background_line_style参数来设置。
+此外，NumberPlane中还有个faded_line_style参数，它用于定义淡化网格线的样式，
+这些淡化网格线通常用于辅助背景网格线，以提供更细致的视觉效果或帮助区分不同的坐标区域。
+一般情况下，不需要使用faded_line_style和faded_line_ratio。
+Manim中的坐标系统CoordinateSystem类提供了很多方法，包括：
+后续介绍各种坐标系统时会用在示例中用到其中的方法，这里不再一一介绍。
+而NumberPlane继承自CoordinateSystem类，所以可以直接使用它的各种方法。
+下面通过几个示例展示NumberPlane的功能。
+3.1. 基础二维坐标平面
+默认情况下，NumberPlane显示坐标轴和背景网格线，帮助用户清晰地看到坐标系的划分。
+坐标轴默认是白色的，背景网格线默认是蓝色的。
+下面的示例展示一个标准的二维坐标平面，包含x轴和y轴，
+x轴和y轴的范围分别设置为-7~7和-4~4，网格线间隔为1。
+plane = NumberPlane(
+    x_range=[-7, 7],
+    y_range=[-4, 4],
+    x_length=6,
+    y_length=4,
+)
+3.2. 自定义网格线样式
+NumberPlane的背景网格线和淡化网格线的样式都可以自定义，
+下面的示例对背景网格线和淡化网格线的颜色、宽度和透明度进行了设置。
+背景网格线是青色，淡化网格线是灰色。
+plane = NumberPlane(
+    x_range=[-7, 7],
+    y_range=[-4, 4],
+    x_length=6,
+    y_length=4,
+    background_line_style={
+        "stroke_color": TEAL,
+        "stroke_width": 4,
+        "stroke_opacity": 0.6,
+    },
+    faded_line_style={
+        "stroke_color": GREY,
+        "stroke_opacity": 0.3,
+    },
+    faded_line_ratio=2,
+)
+注意，这里还设置了faded_line_ratio=2，意思是每1格背景网格线相当于2格的淡化网格线。
+3.3. 不同比例的坐标轴
+默认情况下，NumberPlane的X轴和Y轴的间隔是相等的，
+实际上，通过设置不同的坐标范围和显示范围，可以创建不同比例的坐标轴。
+也就是Y轴的间隔可以大于X轴的间隔，也可以小于X轴的间隔。
+# Y轴的间隔大于X轴的间隔
+plane1 = NumberPlane(
+    x_range=[-7, 7],
+    y_range=[-3, 3],
+    x_length=3,
+    y_length=3,
+)
+
+# Y轴的间隔小于X轴的间隔
+plane2 = NumberPlane(
+    x_range=[-3, 3],
+    y_range=[-7, 7],
+    x_length=3,
+    y_length=3,
+)
+3.4. 绘制函数图像
+使用NumberPlane最大的用途就在于可以在其中绘制函数图像，在坐标系中绘制图像或几何图形，
+可以更方便的定位它们的位置，调整它们之间的变换关系。
+下面的示例在坐标系中绘制了2个函数，使用了坐标系基类提供的绘图方法：plot_parametric_curve。
+plane = NumberPlane(
+    x_range=[-4, 4],
+    y_range=[-16, 16],
+    x_length=6,
+    y_length=4,
+)
+
+g1 = plane.plot_parametric_curve(
+    lambda x: [x, x**2],
+    t_range=[-3.5, 3.5, 0.01],
+)
+g2 = plane.plot_parametric_curve(
+    lambda x: [x, x**3],
+    t_range=[-2.5, 2.5, 0.01],
+)
+文中的代码只是关键部分的截取，完整的代码共享在网盘中（number_plane.py），
+下载地址:完整代码(访问密码: 6872)
+公告

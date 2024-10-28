@@ -1,0 +1,233 @@
+标题: Python工程数学7VPython制作3D图形和动画(上)坐标系、基本形状、点和线
+作者: 磁石空杯
+发布时间: 
+2024-10-27 11:35
+
+阅读数量: 12
+
+VPython是一个基于Python语言的开源库，专门用于创建三维图形和动画。它为用户提供了一种简单而直观的方式，通过Python代码构建出生动的三维场景。VPython的设计初衷是让用户能够轻松地将物理概念可视化，因此在教学、科研和学习物理等领域得到了广泛应用。
+VPython的特点
+VPython的应用
+VPython 模块名称中的字母 “V”代表视觉（visual），指的是物体在三维空间中的表示和运动。物理关系和过程的动态不再像 SciPy 模块那样以函数图的形式来描述，而是以观察者在现实中的感知来描述。重要的是要考虑到许多物理过程（如斜抛）可能无法被人眼捕捉到细节。VPython 提供了根据需要使用速率（频率）函数放慢（慢动作）或加速过程的功能。在计算机上模拟真实动作时，计算机图形学领域将这一过程称为动画，即赋予物体 “生命”。
+表示物体的画布(canvas)称为场景(scene)。在场景中，您可以按住鼠标右键并移动鼠标光标，使显示的对象绕 x-y-z 轴旋转。这允许观察者从不同角度查看对象。
+从第 7 版开始，VPython 模块使用 from vpython import * 语句导入。其他模块无需导入。启动程序后，默认浏览器会打开，程序在网络图形库（WebGL）中运行。WebGL 是一个 JavaScript 编程接口，允许在网络浏览器中显示硬件加速的 3D 图形，而无需额外的扩展程序。
+使用 vector(x, y, z) 方法可以确定物体在三维空间中的位置，如果物体要移动，还可以更改位置。由于向量的概念在 VPython 中起着核心作用，让我们用一个小型控制台示例来简要讨论这一主题：
+>>> 从 vpython 导入 *
+>>> v1=vector(1,2,3)
+>>> v2=vector(4,5,6)
+>>> v1+v2 <5, 7, 9>
+>>> type(v1)
+<class 'vpython.cyvector.vector'>
+在第二行和第三行中，vector(x,y,z) 方法将 v1 和 v2 对象创建为三维向量，其中包含 x-y-z 坐标的数据。第四行是这些向量的加法运算。除了加法之外，还实现了标量积和交叉积。也可以使用 vec() 代替 vector()。使用以下语句可以创建一个体对象 obj：
+obj=body(pos=vec,size=vec,axis=vec,color=color.color,...)
+在这种情况下，body 方法代表基本形状，如 box()、sphere()、cylinder()、cone() 等，它们由 VPython 模块提供。如果需要其他体，可以使用 compound ([k1,k2, ...])方法从基本体（k1、k2 等）创建它们。
+7.1 坐标系
+上图坐标原点位于画布中心，X 轴从左到右，Y 轴从下到上，Z 轴垂直于画布。 启动程序，稍作延迟后程序将在默认浏览器中运行。然后，右键单击画布，按住鼠标右键，旋转坐标系，以便观察到尽可能多的视角。在坐标系中插入坐标为（5,5,0）的灰色点可方便您在空间中定位，并明确 VPython 中坐标变换的作用模式。
+#01_coordinates.py
+from vpython import *
+h=10. #height
+b=10. #width
+t=10. #depth
+scene.title="<h2>VPython坐标系</h2>"
+scene.width=scene.height=600
+scene.background=color.white
+scene.center=vector(0,0,0)
+scene.range=1.5*b
+x0=vector(-b,0,0)
+y0=vector(0,-h,0)
+z0=vector(0,0,-t)
+#x-axis is red
+arrow(pos=x0,axis=vector(2*b,0,0),shaftwidth=0.15,color=color.red)
+#y-axis is green
+arrow(pos=y0,axis=vector(0,2*h,0),shaftwidth=0.15,color=color.green)
+#z-axis is blue
+arrow(pos=z0,axis=vector(0,0,2*t),shaftwidth=0.15,color=color.blue)
+label( pos=vec(b,-1,0),text="x",height=30,box=False,opacity=0)
+label( pos=vec(-1,h,0),text="y",height=30,box=False,opacity=0)
+label( pos=vec(-1,0,t),text="z",height=30,box=False,opacity=0)
+points(pos=vector(5,5,0))
+scene.caption="\n点击鼠标右键然后拖动"
+执行结果
+第 03 至 05 行定义了显示窗口（画布）的高度、宽度和深度。第06 行中的 scene.title=“...” 命令用 HTML H2输出程序的标题。在第 07 行，scene.width=scene.height=600 命令将显示窗口的宽度和高度分别设置为 600 像素。在第 08 行，scene.background=color.white 将画布背景设置为白色。默认设置为黑色。第 09 行中的 scene.center=vector(0,0,0) 语句用于设置坐标系的原点，实际上并无必要，因为默认值正好将原点置于画布的中心。我们在本例中加入该语句只是为了进行进一步的程序测试。由于 scene.range=1.5*b（第 10 行），显示范围被放大，因此在旋转坐标系时，画布上会有足够的空间。第 11 行至第 13 行使用 VPython 方法 vector() 移动坐标轴。负号会导致坐标轴向右（x 轴）、向上（y 轴）或向前（z 轴）移动。三个坐标轴的长度均为 20 个单位。在第 15、17 和 19 行中，arrow() 方法将坐标轴绘制为箭头对象。label()方法对坐标轴进行标注（第 20 至 22 行）。使用 points(pos=vector(5,5,0)) 方法创建的点应能证实坐标变换的正确性： 该点正好位于 x 轴和 y 轴截距的一半。使用 scene.caption=“...”，可以在浏览器中输出任何文本（第 24 行）。练习 应在第二、第三和第四象限表示该点。分别修改源代码并重新启动程序。在场景中旋转坐标系，检查点的位置。
+7.2 基本形状、点和线
+可以使用 VPython 创建以下基本形状：长方体、球体、圆柱体、圆锥体、金字塔、椭圆体和圆环。创建体对象的一般语法是
+obj=body(pos=vec(x0,y0,z0),axis=vec(x,y,z),size=vec(a,b,c), color=color.red)
+第一个参数指定物体在三维空间中的位置。位置的默认设置为 pos=vector(0,0,0)。可以使用 obj.pos=vector(x,y,z) 在动画循环中更改位置。如果只需更改 x 方向的位置，则使用 obj.pos.x= 值语句即可。
+轴向向量定义了主体对象的方向。例如，如果将向量（1,0,0）赋值给轴，则主体将沿 x 轴方向对齐。这同样适用于 Y 轴和 Z 轴。尺寸向量决定了主体对象的尺寸。例如，box(size=vector(10,5,2)) 方法将创建一个宽度为 10 个长度单位（LE）、高度为 5 个长度单位、深度为 2 个长度单位的长方体对象。颜色属性可以通过 obj.color=vector(R,G,B) 向量来改变。默认颜色设置为灰色。
+7.2.1 圆柱体
+圆柱体对象具有以下属性：位置、长度、方向、半径和颜色。pos=vector(x0,y0,z0) 矢量定义了圆柱体在空间中的位置（圆柱体底部的中心）。轴=vector(x,y,z)向量确定圆柱体对象的长度和方向。使用下面的方法，可以从圆柱体()类中创建一个圆柱体对象。类的圆柱体对象：
+cylinder(pos=vector(x0,y0,z0),axis=vector(x,y,z),radius=r,...)
+默认颜色（默认值）为灰色。半径的默认值为 radius=1。例如，如果 x0=-20，x=40，且位置和轴向量的所有其他值均为零，那么将创建一个长度为 40 个长度单位（LE）的圆柱体对象，并在 x 轴上左移 20 LE。圆柱体的中心线正好位于 X 轴上。另外，也可以使用 size= vector(length,height,width) 属性指定圆柱体对象的尺寸。
+#02_cylinder.py
+from vpython import *
+scene.title="<h2>圆柱体</h2>"
+scene.autoscale=True
+scene.background=color.white
+scene.width=600
+scene.height=600
+scene.center=vector(0,0,0)
+scene.range=30
+#Position: x0,y0,z0
+p=vector(-20,0,0)
+#alignment and length
+a=vector(40,0,0)
+r=10.  #radius
+#col=color.gray(0.5)
+#red, green, blue
+col=vector(1,0,0)
+cylinder(pos=p,axis=a,radius=r,color=col,opacity=0.5)
+#length, height, width
+#cylinder(pos=p,size=vector(40,20,20),color=col)
+scene.caption="\n点击鼠标右键然后旋转"
+scene.range=30 属性（第 09 行）改变了显示区域的宽度。小于 30 的值（第 09 行）会放大圆柱体对象，大于 30 的值会缩小圆柱体对象。第 11 行中的 p=vector(-20,0,0) 向量指定圆柱体在 x 轴上向左移动 20 LE。a=vector(40,0,0)向量（第 13 行）定义圆柱体的长度为 40 LE。由于对齐矢量轴的 y 和 z 分量值为零，因此圆柱体的中心线位于 x 轴上。
+在第 17 行中，通过 col=vector(1,0,0) 向量，以 RGB 值确定主体的颜色。颜色饱和度可设置为 0 至 1。颜色的不透明度。可设置的值在 0 和 1 之间。如果不透明度值为 0，则主体完全透明。在第 18 行，以下方法生成了一个圆柱体对象：cylinder(pos=p,axis=a,radius=r,color=col,opacity=0.5)这个圆柱体对象的属性存储在 p、a、r 和 col 对象中（第 11、13、14 和 17 行）。
+7.2.2 立方体
+可以使用以下方法创建一个立方体对象：
+box(pos=vec(x0,y0,z0),axis=vec(x,y,z),size=vec(L,H,B), ...)
+pos 向量定义了长方体的位置。与圆柱体对象不同的是，这里的位置不是指对象的一端，而是指长方体的中心。轴向量定义方向，尺寸向量定义长方体对象的尺寸（长、高、宽）。
+#03_cuboid.py
+from vpython import *
+scene.title="<h2>立方体</h2>"
+scene.autoscale=True
+scene.background=color.white
+scene.width=600
+scene.height=600
+scene.center=vector(0,0,0)
+#x0,y0,z0
+p=vector(0,0,0)
+#alignment
+a=vector(1,0,0)
+#dimensions: length, height, width
+dim=vector(40,20,10)
+scene.range=30
+#rotation
+d=vector(0,0,0)
+c=color.gray(0.5)
+box(pos=p,axis=a,size=dim,up=d,color=c)
+scene.caption="\n点击鼠标右键然后旋转"
+在第 10 行中，p=vector(0,0,0) 向量指定长方体正好位于绘图区域的中心。a=vector(1,0,0) 向量（第 12 行）确定了长方体的方向： 其中心线位于 x 轴上。第 14 行的 dim=vector(40,20,10)向量（第 14 行）提供了盒子的尺寸： 它的长度为 40 LE，高度为 20 LE，宽度为 10 LE。使用第 17 行中的 d=vector(0,0,0) 向量，可以使对象绕其自身轴线旋转。在第 19 行中，box() 方法创建了具有给定属性的长方体对象。
+7.2.3 点
+可以使用以下方法创建点对象：
+points(pos=[vector(-1,0,0), vector(1,0,0)], radius=0, ...)
+pos 属性需要一个包含点对象位置的向量列表。无需指定半径属性。根据 VPython 文档，半径的默认值应为 2.5 像素，即使赋值为 0 也是如此。
+#04_points.py
+from vpython import *
+scene.width=600
+scene.height=600
+scene.background=color.white
+e=1.
+scene.center=vector(e/2,e/2,e/2)
+scene.range=1.2*e
+v=[(0,0,0),(0,0,e),(0,e,0),(0,e,e),
+    (e,0,0),(e,0,e),(e,e,0),(e,e,e),(e/2,e/2,e/2)]
+box(pos=vector(e/2,e/2,e/2),size=vector(e,e,e),
+    axis=vector(1,0,0),opacity=0.5)
+points(pos=v,color=color.red)
+第 06 行指定立方体的边长 e。在第 07 行中，坐标系中心被缩放为边长的一半。第 09 行包含一个名为 v 的列表，其中包含立方体中心和顶点的位置。第 11 行，box() 方法创建了一个边长为 e 的透明立方体。第 13 行，points() 方法创建了 9 个红色点对象，半径为默认值。
+7.2.4 直线
+以下方法在两点之间绘制直线：
+curve(vector(-1,0,0), vector(1,0,0), ...)
+例如，假设给出了两个向量 v1 和 v2。然后，您可以使用五种不同的语法在这两个向量之间画一条连线。语法变体：
+>>> curve(v1,v2) #1
+>>> curve([v1,v2]) #2
+>>> curve(pos=[v1,v2]) #3
+>>> c = curve(v1) #4
+>>> c.append(v2)
+>>> c=curve() #5
+>>> c.append(v1,v2)
+展示了 curve() 方法如何用长度为e, 四面体的底面位于 x-y 平面。根据底面圆周的半径 r，可以按以下方法计算边长：四面体的高指向 Z 轴的正方向:
+#05_lines.py
+from vpython import *
+scene.width=600
+scene.height=600
+scene.background=color.white
+r=10. #radius of the plane
+e=sqrt(3.)*r #edge length
+scene.center=vector(0,0,0)
+scene.range=1.8*r
+x=r*cos(pi/6.)
+y=r*sin(pi/6.)
+z=sqrt(6.)*e/3. #height
+#triangle: bottom left-top, bottom right-bottom left
+v1=[(-x,-y,0),(0,r,0),(x,-y,0),(-x,-y,0)]
+#star: bottom left-center, top-center, bottom right-center
+v2=[(-x,-y,0),(0,0,z),(0,r,0),(0,0,z),(x,-y,0)]
+points(pos=v2,radius=10.,color=color.red)
+c=curve(pos=v1,color=color.green)
+c.append(v2,color=color.yellow)
+分析 第 06 行将 x-y 平面圆周（周界圆）的半径 r 设为 10 个单位长度。第 07 行计算边长 e。第 10 行和第 11 行计算 x-y 平面的 x 坐标和 y 坐标。第 12 行的语句计算四面体在 Z 轴方向的高度 z。第 14 行的 v1 列表包含 x-y 平面三角形底面积的坐标数据。第 16 行的 v2 列表包含四面体边角的 x-yz 坐标。第 17 行，points() 方法绘制了四面体的四个顶点。第 18 行，curve() 方法将 v1 列表中的线条对象绘制成三角形。第 19 行，将 v2 列表中的星形线条添加到折线 c 中。
+参考资料
+7.2.5 球体
+sphere(pos=vector(x0,y0,z0),radius=r,...) 方法创建一个球体对象。pos 向量决定了球体在空间中的中心坐标，半径属性决定了球体的半径。
+#06_spheres1.py
+from vpython import *
+scene.width=600
+scene.hight=600
+scene.background=color.white
+x0=5.
+y0=5.
+z0=5.
+R1=1.
+R2=0.25
+#center
+sphere(pos=vector(0,0,0),radius=R1,color=color.red)
+#top
+sphere(pos=vector(0,y0,0),radius=R2,color=color.blue)
+#bottom
+sphere(pos=vector(0,-y0,0),radius=R2,color=color.blue)
+#left
+sphere(pos=vector(-x0,0,0),radius=R2,color=color.blue)
+#right
+sphere(pos=vector(x0,0,0),radius=R2,color=color.blue)
+#back
+sphere(pos=vector(0,0,-z0),radius=R2,color=color.blue)
+#front
+sphere(pos=vector(0,0,z0),radius=R2,color=color.blue)
+label( pos=vec(0,0,0), text="O",height=30,box=False,opacity=0)
+sphere(pos=vector(x0/2,0,0),radius=R2,color=color.blue)
+sphere(pos=vector(-x0/2,0,0),radius=R2,color=color.blue)
+第 06 至 08 行定义了蓝色小球在空间中的坐标。中心红球的半径为 R1=1（第 09 行），其他六个球的半径为 R1=0（第 10 行）。球的半径分别为 R2=0.25。在第 12 至 24 行，sphere() 方法创建了各个球体对象。注释描述了各个球体的位置。第 25 行创建了一个名为 O 的标签对象。
+#07_spheres2.py
+from vpython import *
+scene.background=color.white
+scene.width=600
+scene.height=600
+e = 5 #lattice spacing
+R = 0.5 #radius of an atomic nucleus
+for x in range(-e,e):
+    for y in range(-e,e):
+        for z in range(-e,e):
+            sphere(pos=vector(x,y,z),radius=R,color=color.red)
+三个嵌套 for 循环（第 08 至 11 行）计算红色球体的 x-yz 坐标。第 08 行的第一个 for 循环设置球体在 x 轴上的位置。第 09 行的第二个 for 循环设置球体在 Y 轴上的位置。第 10 行的第三个 for 循环设置 Z 轴上的位置。在第 11 行中，sphere(pos=vector(x,y,z),...)方法创建单个红球对象。
+7.2.6 穿透
+穿透探讨了相互穿透的物体必须如何在三视图中表示，这对初学者来说往往是一个困难的概念。为此，我们提供了一个说明相互穿透体空间表示的程序。其图形输出如图 7.8 所示，在空间上表示了一个圆锥体和一个圆柱体的相互穿透。该程序可用于模拟该穿透的不同视图。
+#08_penetration.py
+from vpython import *
+rc=10. #radius of the cone
+hc=3.*rc #height of the cone
+scene.background=color.white
+scene.width=600
+scene.hight=600
+scene.range=2.1*rc
+rz=rc/2. #radius of the cylinder
+lz=2.5*rc #length of the cylinder
+z=rc/1.5 #displacement of the cylinder
+cone(pos=vec(0,-hc/2.5,0),axis=vec(0,hc,0),radius=rc)
+cylinder(pos=vec(-lz/2.,0,z),axis=vec(lz,0,0),radius=rz)
+圆锥的半径 rc 和高度 hc 是参考值（03 和 04 行）。圆柱体的半径 rz 和长度 lz（第 09 和 10 行）取决于这些值。在第 12 行，使用 cone() 方法创建了一个圆锥体对象。轴线=vec(0,hc,0)矢量定义了圆锥在 Y 轴方向上的方向。第 13 行，使用 cylinder() 方法创建一个圆柱体对象。axis=vec（lz,0,0）向量定义了它在 x 轴方向上的方向。
+7.2.7 复合体
+您可以使用 compound([G1,G2,G3, ...])方法从基本形状 G1、G2 和 G3 创建实体对象。下例展示了如何通过两个基本形状（立方体和金字塔）的组合创建复合体。
+#09_combination.py
+from vpython import *
+scene.background=color.white
+scene.width=scene.height=600
+a=5.
+b=10.
+scene.range=1.5*b
+scene.autocenter=True
+p1=pyramid(pos=vec(0,a,0),axis=vec(0,1,0),size=vec(a,a,a),color=color.green)
+q1=box(pos=vector(0, a/2,0),size=vector(a,a,a),color=color.red)
+q2=box(pos=vector(0,-b/2,0),size=vector(b,b,b),color=color.blue)
+werkstueck=compound([p1,q1,q2])
+在第 09 行，使用以下方法创建了 p1 对象：pyramid(pos=vec(0,a,0),axis=vec(0,1,0),size=vec(a,a,a)金字塔对象 p1 沿 y 轴正方向向上移动了 5 个单位长度。对齐方向为 y 轴。金字塔的长、宽、高各有 5 个单位长度的值。q1 立方体在 y 轴正方向上向上移动了 2.5 个单位长度（第 10 行）。q2 立方体在负 y 轴上向下移动 5 个单位长度（第 11 行）。第 12 行中的 compound([p1,q1,q2]) 方法将工件对象创建为复合体。
+公告

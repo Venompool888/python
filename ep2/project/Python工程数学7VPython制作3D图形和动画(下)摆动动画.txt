@@ -1,0 +1,239 @@
+标题: Python工程数学7VPython制作3D图形和动画(下)摆动动画
+作者: 磁石空杯
+发布时间: 
+2024-10-23 19:26
+
+阅读数量: 31
+
+7.4 摆动动画
+从静止位置偏转的摆会产生摆动。这些摆动和其他运动一样可以制作动画。在制作摆的运动动画时，必须首先建立描述摆运动的微分方程系统。然后在动画循环中使用简单的求和算法求解该微分方程系。根据微分方程系的解，可以计算出摆锤的 x-y 位置。
+7.4.1 单摆
+理想单摆（数学摆）的运动可以用下面的微分方程来描述：
+接下来，我们将使用下面的代换：
+因此，您将得到一个包含两个一阶微分方程的微分方程系统：
+由于精度对于动画并非绝对必要，算法的效率才是最重要的，因此使用欧拉法是求解该微分方程系的便捷方法。
+下例演示了单摆的运动。微分方程系在动画循环中使用欧拉法的求和算法求解。摆锤由代表螺纹的圆柱体对象（圆柱体）和代表质量的球体对象（球体）组成。
+#18_pendulum.py
+from vpython import *
+y0=-5. #shift on the y-axis
+b=5. #width of the ceiling
+l=8. #length of the pendulum
+phi=45. #deflection
+r=0.5 #radius of the sphere
+scene.width=600
+scene.height=600
+scene.center =vector(0,y0,0)
+scene.range=1.5*b
+scene.background = color.white
+box(size=vector(b,b/20.,b/2.),color=color.gray(0.8)) #ceiling
+rod=cylinder(axis=vector(0,l,0),radius=0.05)
+mass = sphere(radius=r,color=color.red)
+mass.pos=vector(0,rod.pos.y,0)
+g=9.81 #gravitational acceleration
+w02=g/l  #square of the angular frequency
+phi=radians(phi)
+w=0. #initial angular velocity
+dt=0.02
+while True:
+    rate(100)
+    phi=phi+w*dt
+    w=w-w02*sin(phi)*dt
+    x= l*sin(phi)
+    y=-l*cos(phi)
+    rod.axis=vector(x,y,0)
+    mass.pos  =vector(x,y,0)
+第6行定义了偏转角 phi。利用和算法 phi=phi+wdt 和 w=w-w02sin(phi)*dt 在动画循环（第 22 至 29 行）中求解摆运动的微分方程系（第 24 和 25 行）。第 26 和 27 行计算当前球体位置的 x 和 y 坐标。第 28 和 29 行更新杆和球体的位置。
+7.4.2 弹簧摆
+弹簧摆的摆动运动可以用以下微分方程描述：
+通过代换可以得到以下微分方程系：
+下例展示了弹簧-质量系统的摆动。质量由一个球形物体表示。
+#19_spring_pendulum.py
+from vpython import *
+y0=-5. #shift on the y-acis
+b=8.   #width of the ceiling
+l=0.8*y0 #length of the spring
+r=1.#radius of the mass
+c=1.#spring constant
+m=1.#mass of the sphere
+scene.width=600
+scene.height=600
+scene.center =vector(0,y0,0)
+scene.background = color.white
+box(pos=vector(0,b/40.,0),size=vector(b,b/20.,b/2.),
+color=color.gray(0.8)) #ceiling
+spring=helix(axis=vector(0,l,0),radius=0.6,color=color.yellow)
+spring.thickness=0.2
+spring.coils=8
+mass=sphere(pos=spring.pos,radius=r,color=color.red)
+w02=c/m   #square of the angular frequency
+y=-0.6*l #deflection
+v=0. #initial velocity
+dt=0.02
+while True:
+    rate(100)
+    y=y+v*dt
+    v=v-w02*y*dt
+    spring.axis=vector(0,y+l,0)
+    mass.pos =vector(0,y+l-r,0)
+第 03 和 11 行将坐标原点向上移动了 5 个长度单位。第 05 至 08 行定义了弹簧摆的数据。在第 14 行中，helix() 方法创建了弹簧对象 spring。第 15 和 16 行补充了弹簧对象的属性。第 17 行中，sphere() 方法创建了球体对象质量。挠度（初始值）设置为弹簧长度 l 的 60%（第 19 行）。在无限循环中（第 22 行至第 27 行），使用欧拉方法求解微分方程系统（第 24 行和第 25 行）。第 26 和 27 行更新了弹簧末端和球心的位置。
+7.5 事件处理
+对于事件处理，VPython 还提供了命令按钮（按钮）、单选按钮（单选）、多选选项（复选框和菜单）和滑块（滑块）等控件。对于每个事件，都必须定义一个函数来执行相关操作。事件总是按照以下模式实现的：control(bind=function, ...)
+控件标识符可以是一个控件的名称，如按钮、滑块、复选框或单选按钮。为使 controlelement 方法能够触发事件，必须将一个自定义函数作为参数传递给该方法。该函数将分配给绑定属性。自定义函数的括号必须省略。所有其他参数取决于控件的类型。下例显示了如何使用滑块()方法改变电压指针的旋转频率。复选框()方法可以激活以双倍频率旋转的功率指针。button()方法可用于暂停和重启动画。
+#20_event-processing.py
+from vpython import *
+scene.title="<h2>Rotating voltage and power pointer</h2>"
+scene.width=scene.height=600
+scene.background=color.white
+
+runs = True
+col=color.yellow
+
+def start(b):
+    global runs
+    runs = not runs
+    if runs: b.text = "Pause"
+    else: b.text = "Start"
+
+def omega(s):
+    txtA.text = "{:1.2f}".format(s.value)
+
+def visibleP(b):
+    if b.checked:
+        p.visible = True
+    else:
+        p.visible = False
+
+u_s=2.
+p_s=1.5
+d=0.025
+scene.range = 1.2*u_s
+u=arrow(pos=vec(0,0,0),axis=vec(0,u_s,0),color=color.blue)
+p=arrow(pos=vec(0,0,0),axis=vec(p_s,0,0),color=col)
+p.visible=False
+u.shaftwidth=d
+p.shaftwidth=d
+button(text="Pause",pos=scene.title_anchor,bind=start)
+scene.append_to_caption("\n\n")
+scene.caption="\n Change frequency:\n\n"
+sldF=slider(min=0,max=6.28,value=1,length=300,bind=omega,right=4)
+txtA=wtext(text="{:1.2f}".format(sldF.value))
+scene.append_to_caption(" rad/s\n\n")
+checkbox(bind=visibleP, text="Show power pointer\n\n")
+dt=0.01
+w=1.
+while True:
+    rate(1/dt)
+    if runs:
+        w=sldF.value
+        u.rotate(angle=w*dt,axis=vec(0,0,1))
+        p.rotate(angle=2.0*w*dt,axis=vec(0,0,1))
+如果全局 runs 变量的值（第 07 和 11 行）为 True，动画将在 while 循环（第 43 至 48 行）中执行。如果要暂停动画，必须单击 “暂停 ”按钮。然后，按钮的标签将变为 Start（开始）。在这种情况下，第 34 行的 button() 方法会调用第 10 至 14 行的自定义 start(b) 函数。命令按钮位于场景的左上角。start(b) 函数通过 bind=start 调用。函数定义的括号和函数参数 b 必须省略。在第 37 行中，slider() 方法调用了第 16 和 17 行中的自定义 bind=omega 函数。设置值存储在 sldF对象中，并显示在第 38 行的 txtA 文本字段中。在第 46 行，使用 w=sldF.value 赋值改变旋转频率。第 40 行的 checkbox(bind=visible,...) 方法调用了第 19 至 23 行的自定义函数 visible(b)。如果激活复选框控件，电源指针就会打开。
+参考资料
+7.6 项目任务:耦合弹簧摆的动画
+在此任务中，我们需要在 VPython 中制作一个耦合弹簧摆的振荡动画，该摆由两个弹簧-质量系统组成，弹簧常数为 c1 和 c2，质量为 m1 和 m2。弹簧-质量系统沿 y 轴方向摆动。阻尼应暂时忽略。该解决方案包括三个步骤：
+from vpython import *
+
+y0 = -5.  # shift on the y-axis
+b = 10.  # width of the ceiling
+r = 1.  # radius of the mass
+l = 0.9 * y0
+c1 = 1.  # spring constant
+m1 = 1.  # mass of the sphere
+c2 = 1.
+m2 = 1.
+scene.width = 600
+scene.height = 800
+scene.center = vector(0, 2 * y0, 0)
+scene.background = color.white
+
+box(pos=vector(0, b / 40., 0), size=vector(b, b / 20., b / 2.),
+     color=color.gray(0.8))  # ceiling
+
+# 计算弹簧 1 的底部和顶部端点
+spring1_bottom = vector(0, 0, 0)
+spring1_top = spring1_bottom + vector(0, l, 0)
+
+spring1 = helix(pos=spring1_bottom, axis=spring1_top - spring1_bottom,
+                 color=color.yellow, radius=0.5 * r, thickness=0.2, coils=10)
+
+mass1 = sphere(pos=spring1_top, radius=r, color=color.red)
+
+# 类似地计算弹簧 2 的端点
+spring2_bottom = spring1_top
+spring2_top = spring2_bottom + vector(0, l, 0)
+
+spring2 = helix(pos=spring2_bottom, axis=spring2_top - spring2_bottom,
+                 color=color.green, radius=0.5 * r, thickness=0.2, coils=10)
+mass2 = sphere(pos=vector(0,2*l,0),radius=r, color=color.blue)
+y1=-0.6*l #deflection
+y2=0
+v1=v2=0 #initial velocity
+lk=l-r
+dt=0.02
+while True:
+    rate(50)
+    y1=y1 + v1*dt
+    v1=v1-(c1+c2)/m1*y1*dt+c2/m1*y2*dt #-0.05*v1*dt
+    y2=y2 + v2*dt
+    v2=v2-c2/m2*(y2-y1)*dt #-0.05*v2*dt
+    spring1.axis=vector(0,y1+l,0)
+    mass1.pos =vector(0,y1+lk,0)
+    spring2.axis=vector(0,y1+y2+l,0)
+    spring2.pos.y =mass1.pos.y
+    mass2.pos =spring2.pos+vector(0,y1+y2+lk,0)
+7.7 项目任务： 两个耦合简单摆的动画
+对于接下来的任务，我们需要制作一个摆系统的动画，该摆系统由两个简单的数学摆组成，其质量 m 通过弹簧（弹簧常数 c）连接。首先，您必须再次建立弹簧-质量系统的微分方程系统：
+然后，使用下面的代换：
+因此，您将得到下面的一阶微分方程系：
+使用缩写
+并根据欧拉法从一阶微分方程系统中开发出算法一阶微分方程系：
+#22_double_pendulum.py
+from vpython import *
+phi1=radians(-5.)
+phi2=radians(5.)
+b=12.   #width of the ceiling
+y0=-b/2.#shift on the y-axis
+a=b/2.  #distance between the pendulums
+l=0.9*b #length of the pendulums
+r=b/15. #radius of the spheres
+m=10.   #mass of the spheres
+c=4. #spring constant
+scene.width=600
+scene.height=600
+scene.center=vector(0,y0,0)
+scene.range=0.8*b
+scene.background = color.white
+box(size=vector(b,b/20.,b/4.),color=color.gray(0.8)) #ceiling
+rod1=cylinder(axis=vector(0,l,0),radius=0.05)
+rod1.pos=vector(-a/2.,0,0)
+rod2=cylinder(axis=vector(0,l,0),radius=0.05)
+rod2.pos=vector(a/2.,0,0)
+mass1 = sphere(radius=r,color=color.red)
+mass2 = sphere(radius=r,color=color.blue)
+spring=helix(axis=vector(a,0,0),radius=0.4)
+spring.thickness=0.1
+spring.coils=10
+g=9. #gravitational acceleration
+w02=g/l  #pendulum frequency
+k=c/m    #spring frequency
+w1=w2=0 #angular velocity
+dt=0.02
+while True:
+    rate(100)
+    phi1=phi1+w1*dt
+    w1=w1-w02*phi1*dt+k*(phi2-phi1)*dt #-0.05*w1*dt
+    phi2=phi2+w2*dt
+    w2=w2-w02*phi1*dt-k*(phi2-phi1)*dt #-0.05*w2*dt
+    x1= l*sin(phi1)
+    y1=-l*cos(phi1)
+    x2= l*sin(phi2)
+    y2=-l*cos(phi2)
+    rod1.axis=vector(x1,y1,0)
+    mass1.pos =vector(x1-a/2.,y1,0)
+    rod2.axis=vector(x2,y2,0)
+    mass2.pos =vector(x2+a/2.,y2,0)
+    spring.pos=mass1.pos+vector(r,0,0)
+    spring.axis.x=x2-x1+a-2*r
+    spring.axis.y=y2-y1
+在第 03 和 04 行，您可以改变两个摆的偏转角 phi1 和 phi2。第 10 和 11 行定义了摆锤的质量和耦合弹簧的弹簧常数。第 34 至 37 行求解了微分方程系统。测试时可将其删除。在第 38 至 41 行，根据偏转角 phi1 和 phi2 计算当前的 x-y 坐标。在第 42 至 48 行，为每个摆锤和耦合弹簧分配当前位置。
+公告

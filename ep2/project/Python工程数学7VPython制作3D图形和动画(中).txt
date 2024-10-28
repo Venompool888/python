@@ -1,0 +1,232 @@
+标题: Python工程数学7VPython制作3D图形和动画(中)
+作者: 磁石空杯
+发布时间: 
+2024-10-24 19:41
+
+阅读数量: 25
+
+7.3 动画
+动画的主要目的是移动物体。正如在现实世界中一样，使用 VPython 方法创建的身体对象应该能够按照物理定律在三维空间中移动。所有位置变化的数学运算通常都在一个无限循环中进行，在本书的后续章节中，我也将其称为动画循环。您可以使用 rate(frequency) 方法来设置动画在 1 秒钟内的执行频率。body.pos=vector(x,y,z) 属性设置了身体在三维空间中的当前位置。
+7.3.1 垂直运动 垂直运动时，三维坐标的 x 和 z 分量值为零。
+body.v=vector(0,0,0) 属性初始化了速度矢量。body.v*dt 属性根据当前速度与可自由选择的时间间隔 dt 的乘积计算当前位置。标识符 v 可自由选择。
+from vpython import *
+r=1. #radius
+h=5. #height
+scene.background=color.white
+scene.center=vector(0,h,0)
+box(pos=vector(0,0,0),size=vector(2*h,r/2,h), color=color.green)
+ball = sphere(radius=r, color=color.yellow)
+ball.pos=vector(0,2*h,0) #drop height
+ball.v = vector(0,0,0) #initial velocity
+g=9.81
+dt = 0.01
+while True:
+    rate(100)
+    ball.pos = ball.pos + ball.v*dt
+    if ball.pos.y < r:
+        ball.v.y = -ball.v.y
+    else:
+        ball.v.y = ball.v.y - g*dt
+第 06 行将第 07 行的地板对象 box() 向下移动 5 个长度单位。第 08 行创建了球对象。第 09 行确定下降高度为 10 个单位长度。第 10 行用 ball.v= vector(0,0,0) 属性初始化。在第 12 行，时间间隔 dt=0.01 被设置为现实值。无限循环在第 13 行至第 19 行之间运行。由于使用了 rate(100)，该循环每秒执行 100 次（第 14 行）。在第 15 行，根据旧球位置和速度 ball.v 与时间间隔 dt 的乘积计算出新球位置 ball.pos。如果球的位置小于球的半径 r，物体球就会向上移动（第 16 和 17 行）；否则就会向下移动（第 18 和 19 行）。
+7.3.2 水平运动
+条形磁铁在线圈内沿 x 轴方向来回运动。线圈对象是使用 helix() 方法创建的。
+#11_cylinder_horizontal.py
+from vpython import *
+scene.background=color.white
+scene.width=600
+scene.height=300
+l=10. #length of the coil
+r=l/5. #radius of the core
+scene.center=vector(0,0,0)
+cs=vector(1,0.7,0.2) #copper-colored
+helix(pos=vec(-l/2,0,0),axis=vec(l,0,0),radius=1.25*r,
+coils=10,thickness=0.3,color=cs)
+np = cylinder(pos=vec(l/2,0,0),axis=vec(l/2,0,0),radius=r,
+color=color.red)
+sp = cylinder(pos=vec(0,0,0),axis=vec(l/2,0,0),radius=r,
+color=color.green)
+magnet=compound([np,sp])
+magnet.pos=vector(0,0,0)
+dx = 0.1
+while True:
+    rate(50)
+    x = magnet.pos
+    x = x+vector(dx,0,0)
+    magnet.pos = x
+    if x.x>l/4. or x.x<=-l/4.:
+        dx = -dx
+在第 10 行中，使用 helix() 方法创建了线圈对象。左边缘在负 x 轴上向左移动了 5 个单位长度。线圈长度 l 为 10 个单位长度。线圈有 10 圈。第 11 行 使用圆柱体() 方法创建条形磁铁的红色北极 np。第 12 行重复同样的过程，创建条形磁铁的绿色南极 sp。第 13 行，使用 compound([np,sp]) 方法创建磁铁对象。条形磁铁水平运动的动画在 while 循环中执行（第 16 至 22 行）。在第 18 行中，x 变量被分配到第 14 行中初始化的磁铁的 magnet.pos 位置。第 19 行中的求和算法计算出磁铁的新 x 位置。该位置将分配给第 20 行中的 magnet.pos 属性。如果偏转大于 l/4 或小于 -l/4（第 21 行），由于符号 dx = -dx（第 22 行）的变化，运动方向会发生逆转。
+7.3.3 空间运动
+#12_ball_wall.py
+from vpython import *
+scene.width=scene.height=600
+scene.background=color.white
+cw=color.gray(0.9) #color of the walls
+b = 5.0 #width
+d = 0.3 #thickness of the wall
+r=0.4 #ball radius
+s2 = 2*b - d
+s3 = 2*b + d
+#right hand wall
+box (pos=vec(b, 0, 0), size=vec(d, s2, s3), color = cw)
+#left hand wall
+box (pos=vec(-b, 0, 0), size=vec(d, s2, s3), color = cw)
+#bottom wall
+box (pos=vec(0, -b, 0), size=vec(s3, d, s3), color = cw)
+#top wall
+box (pos=vec(0, b, 0), size=vec(s3, d, s3), color = cw)
+#back wall
+box(pos=vec(0, 0, -b), size=vec(s2, s2, d), color = cw)
+ball = sphere(radius=r,color=color.yellow)
+ball.m = 2.0 #mass of the ball
+ball.p = vec(-0.15, -0.23, 0.27) #impulse
+#ball.p = vec(0,-1,0)
+#ball.p = vec(-1,0,0)
+#ball.p = vec(0,-1,-1)
+b = b - d*0.5 - ball.radius
+dt = 0.2
+while True:
+    rate(100)
+    ball.pos = ball.pos + (ball.p/ball.m)*dt
+    if not (b > ball.pos.x > -b):
+        ball.p.x = -ball.p.x
+    if not (b > ball.pos.y > -b):
+        ball.p.y = -ball.p.y
+    if not (b > ball.pos.z > -b):
+        ball.p.z = -ball.p.z
+在第 12 至 20 行，创建了墙壁的方框对象。第 21 行创建的黄色球体对象球的半径为 r=0.4（第 08 行）。第 22 行为球对象定义了一个新属性 m。标识符 m 可以自由选择。我们可以选择质量来表示球的质量。第 23 行定义并初始化的 ball.p 向量表示质量的冲量。标识符 p 也可以自由选择。作为提示，以下公式适用于脉冲：
+通过该等式可以计算移动的距离：
+这同样适用于 y 和 z 方向。
+小球运动的动画可以在 while 循环中进行（第 29 至 37 行）。在第 31 行，下面的求和算法将根据脉冲 p、质量 m 和时间间隔 dt 计算出球的当前位置：ball.pos = ball.pos + (ball.p/ball.m)*dt
+当球分别弹到侧壁、顶壁、底壁或后壁时，第 32 至 37 行中的 if 查询会使球的运动方向反转。
+7.3.4 复合运动
+斜抛是制作复合运动动画的一个很好的例子。对于投掷运动的 x 和 y 分量，我们假设以下公式适用：
+运动轨迹取决于初速度 v0、投掷角度 α 和投掷高度 h。
+下面为斜向投掷动画的实现。在点击画布上的鼠标左键之前，程序不会启动运动序列。
+#13_oblique_throw.py
+from vpython import *
+h=1.2 #throwing height
+b=60. #width of the reference plane
+v0=22.5 #initial velocity
+alpha=45. #throwing angle
+alpha=radians(alpha)
+g=9.81
+r=b/40.
+h=h+r
+scene.background=color.white
+scene.width=600
+scene.height=600
+scene.center=vector(0,b/4.,0)
+ball = sphere(pos=vector(-b/2.,h,0),radius=r,color=color.yellow)
+box(pos=vec(0,-b/50.,0),size=vec(b,b/25.,b/2.),color=color.green)
+scene.caption="\nStart with mouse click"
+scene.waitfor('click')
+dt=0.01
+t=0.0
+while True:
+    rate(50)
+    x = v0*t*cos(alpha)
+    y = h + v0*t*sin(alpha) - 0.5*g*t**2
+    ball.pos = vector(x-b/2.,y+r,0)
+    if y<=0.0:
+        break
+    t=t+dt
+在第 18 行中，scene.waitfor('click') 语句使动画在场景中鼠标点击后才执行。通过这一中断，可以更好地识别投掷高度。在动画循环（第 21 至 28 行）中，第 23 和 24 行计算了球运动的 x 和 y 分量。第 25 行将运动位置的当前矢量分配给 ball.pos 属性。当球到达参考平面时（第 26 行），break 语句会终止动画。
+参考资料
+7.3.5 旋转
+椭圆轨迹上物体的旋转运动可以通过随时间变化的 x-y 坐标来制作动画：
+如果半轴 a 和 b 相等，则为圆周运动；否则，物体按椭圆轨迹运动。下例演示了月球在环绕地球的椭圆轨道上的运动。月球的平均轨道偏心率 (0.0549)被大大夸大，以说明地球并不在椭圆的中心。
+#14_elliptical_orbit.py
+from vpython import *
+scene.width=600
+scene.height=600
+b=10. #semiaxis of the ellipse
+a=1.157*b #semiaxis of the ellipse
+Rm=1. #Moon radius
+Re=3.7*Rm #Earth radius
+rem=10.*Re #Earth-Moon distance
+scene.background=color.white
+earth = sphere(pos=vector(0.1*a,0,0),radius=Re,texture=textures.earth)
+moon = sphere(pos=vector(rem,0,0),radius=Rm,color=color.gray(0.8))
+w=1.0 #angular velocity
+t=0
+dt=1e-3
+while True:
+    rate(100)
+    x = a*cos(w*t)
+    y = b*sin(w*t)
+    moon.pos = vector(x,y,0)
+    t=t+dt
+在第 05 至 09 行，定义了地月行星系统的数据。在第 11 行中，使用 sphere() 方法创建了地球对象。球形地球对象在正 x 轴上向右移动了 0.1*a。我们选择这个不切实际的高值，是为了说明地球的几何位置与椭圆中心并不重合。体对象的表面可以通过纹理属性直观地表现出来；显然，我们选择了 textures.earth 值。实际上不需要明确创建地球对象，因为在源代码的后续部分将不再使用它。月球的情况则不同。我们必须为月球创建一个对象，因为在动画循环中需要用到它。第 12 行创建月球对象。
+角速度 w=1.0 与实际情况不符（第 13 行）。为了更好地理解月球的运动，我们任意设置了这个值。while 循环（第 16 至 21 行）实现动画。在第 20 行中，对于每个时间 t，moon.pos 属性都将分配给第 18 和 19 行中确定的 x-y 坐标。
+旋转圆轨迹上的物体 VPython 还提供了一种简单的圆周运动动画制作方法。下面的方法可将圆形轨迹的运动制作成动画：body .rotate(angle=w*dt,axis=vec(0,1,0),origin=vec(0,0,0))
+角度属性必须指定角度 w*dt。角速度 w（假定为恒定值）计算出每个时间（dt）的新角度，从而实现旋转运动。轴向量轴指定旋转轴，原点属性指定旋转中心。
+#15_rotation1.py
+from vpython import *
+scene.width=scene.height=600
+scene.background=color.white
+scene.center=vec(0,0,0)
+r=1.
+col=color.green
+scene.range=1.5*r
+red = box(pos=vec(0,0,0),axis=vec(0,1,0),size=vec(r,r,r),color=col)
+#red =ring(pos=vec(0,0,0),axis=vec(0,0,1),radius=r,thickness=r/5.)
+#red=ellipsoid(pos=vec(0,0,0),axis=vec(1,0,0),size=vec(2.0*r,r,r))
+#red = arrow(pos=vec(0,0,0), axis=vec(r,0,0), color=col)
+dt = 0.05
+w=0.5    #angular velocity
+while True:
+    rate(25)
+    red.rotate(angle=w*dt,axis=vec(0,1,0),origin=vec(0,0,0))
+清单 7.15 旋转立方体的输出 图 7.15 是旋转立方体动画的快照。
+第 09 行，box() 方法创建了边长为 r 的红色对象。在第 17 行，以下方法使立方体绕 y-轴旋转：rotate(angle=w*dt,axis=vec(0,1,0),origin=vec(0,0,0))通过改变第 14 行中的角速度 w，可以改变旋转频率。旋转中心位于原点（零）。
+多个物体的旋转 在动画循环中，多个物体也可以以不同的角速度沿不同的角速度在圆轨迹上移动。下面例子展示了如何将内行星水星、金星和地球绕太阳的旋转运动制作成动画并显示结果。行星之间的相对距离与实际情况不符，所有行星都围绕 Z 轴旋转。
+#16_rotation2.py
+from vpython import *
+scene.width=scene.height=600
+scene.background=color.white
+R=5.0 #radius of the sun
+r=10.0 #Sun-Mercury distance
+sphere(pos=vec(0,0,0),axis=vec(1,0,0),radius=R,color=color.yellow)
+mercury=sphere(pos=vec(r,0,0),axis=vec(1,0,0),
+radius=0.2*R,color=color.red)
+venus=sphere(pos=vec(2*r,0,0),axis=vec(1,0,0),
+radius=0.3*R,color=color.green)
+earth=sphere(pos=vec(3*r,0,0),axis=vec(1,0,0),
+radius=0.5*R,texture=textures.earth)
+dt = 0.05
+w1=0.3
+w2=0.2
+w3=0.1 #angular velocity
+while True:
+    rate(25)
+    mercury.rotate(angle=w1*dt,axis=vec(0,0,1),origin=vec(0,0,0))
+    venus.rotate(angle=w2*dt,axis=vec(0,0,1),origin=vec(0,0,0))
+    earth.rotate(angle=w3*dt,axis=vec(0,0,1),origin=vec(0,0,0))
+第 05 和 06 行定义了太阳半径 R 和水星与太阳的距离 r。第 08 行至第 10 行生成水星、金星和地球等行星。第 12 至 14 行定义了行星天体的角速度。行星与太阳的距离越远，角速度就越小。在 while 循环中（第 15 至 19 行），rotate() 方法被应用于水星、金星和地球。axis=vec(0,0,1)矢量指定行星绕 Z 轴旋转。
+7.3.6 随机运动
+在布朗运动中，花粉粒等小颗粒在流体中向不同方向随机运动。这些运动是由粒子附近液体分子的热运动引起的。运动所引起的。在 VPython 中，通过使用 random() 函数为 x-y 坐标生成随机数，就能为这种随机运动制作动画。该函数生成介于 0 和 1 之间的随机数。每次循环都会重新计算 x-y 坐标：
+第一个角度的值介于 0 和 π 之间，第二个角度的值介于 0 和 2π 之间。sin α 函数计算粒子与坐标系原点的距离。cosφ 和 sinφ 函数计算随机分布的 x-y 坐标。
+下面展示了如何制作球体二维随机运动的动画。使用 attach_trail(object, ...)方法，球体的运动轨迹以蓝色细线显示。
+#17_random.py
+from vpython import *
+a=10.
+r=a/20.
+scene.background=color.white
+scene.width=scene.height=600
+scene.center=vector(0,0,0)
+scene.range=a
+part = sphere(radius=r,color=color.red)
+part.pos=vector(0,0,0)
+attach_trail(part,radius=0.05,color=color.blue)
+i=0
+while i<10:
+    sleep(0.8)
+    alpha = pi*random()
+    phi = 2.0*pi*random()
+    x = a*sin(alpha)*cos(phi)
+    y = a*sin(alpha)*sin(phi)
+    part.pos=vector(x,y,0)
+    i=i+1
+第 09 行，sphere() 方法创建了部件对象。在第 10 行，part.pos=vector (0,0,0) 属性将部分球体的初始位置置于坐标系的原点。第 11 行中的 attach_trail(part, ...)方法将轨迹曲线描画成半径=0.05 的蓝色线条。动画在 while 循环中执行十次（第 13 至 20 行）。在第 14 行中，sleep(0.8) 函数确保循环中断 0.8 秒。在第 15 行中，random() 函数生成介于 0 和 π 之间的随机数，用于计算球体与坐标原点之间随机分布的距离。第 16 行生成的随机数位于 0 到 2 π 之间。
+公告
